@@ -27,7 +27,7 @@ can_xl_protocol.fields.vcid_flag = ProtoField.uint8("can_xl.vcid_flag", "VCID Fl
 can_xl_protocol.fields.sec_flag = ProtoField.uint8("can_xl.sec_flag", "SEC Flag", base.DEC_HEX)
 
 local CAN_XL_PRIORITY_OFFSET = 0
-local CAN_XL_VCID_OFFSET = 2
+local CAN_XL_VCID_OFFSET = 0
 local CAN_XL_FLAGS_OFFSET = 4
 local CAN_XL_SDU_TYPE_OFFSET = 5
 local CAN_XL_LENGTH_OFFSET = 6
@@ -44,12 +44,12 @@ function can_xl_protocol.dissector(buffer, packet_info, tree)
 
     local can_xl_sub_tree = tree:add(can_xl_protocol, buffer)
 
-    local priority_range = buffer(CAN_XL_PRIORITY_OFFSET, 2)
+    local priority_range = buffer(CAN_XL_PRIORITY_OFFSET, 4)
     local priority = bit.band(priority_range:le_uint(), 0x7FF)
     can_xl_sub_tree:add(can_xl_protocol.fields.priority, priority_range, priority)
 
-    local vcid_range = buffer(CAN_XL_VCID_OFFSET, 1)
-    local vcid = vcid_range:le_uint()
+    local vcid_range = buffer(CAN_XL_VCID_OFFSET, 4)
+    local vcid = bit.band(bit.rshift(vcid_range:le_uint(), 16), 0xFF)
     can_xl_sub_tree:add(can_xl_protocol.fields.vcid, vcid_range, vcid)
 
     local flags_range = buffer(CAN_XL_FLAGS_OFFSET, 1)
