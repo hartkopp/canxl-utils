@@ -207,7 +207,7 @@ int main(int argc, char **argv)
 		}
 
 		if (verbose)
-			printxlframe(&cfx);
+			printxlframe(&cfx, 12);
 
 		if (gap)
 			if (nanosleep(&ts, NULL))

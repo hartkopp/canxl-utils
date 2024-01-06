@@ -22,6 +22,7 @@
 #include "printframe.h"
 
 #define ANYDEV "any"
+#define DEFAULT_DLEN 10
 
 extern int optind, opterr, optopt;
 
@@ -31,6 +32,7 @@ void print_usage(char *prg)
 	fprintf(stderr, "Usage: %s [options] <CAN interface>\n", prg);
 	fprintf(stderr, "Options:\n");
 	fprintf(stderr, "         -V <vcid>:<vcid_mask> (VCID filter)\n");
+	fprintf(stderr, "         -l <length> (crop data output, default %d, 0 = disable)\n", DEFAULT_DLEN);
 	fprintf(stderr, "         -P (check data pattern)\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Optional filter sets can be specified on the commandline\n");
@@ -54,6 +56,7 @@ int main(int argc, char **argv)
 	struct sockaddr_can addr;
 	struct ifreq ifr;
 	int max_devname_len = 0; /* to prevent frazzled device name output */
+	unsigned int maxdlen = DEFAULT_DLEN;
 	int nbytes, ret, i;
 	int sockopt = 1;
 	int vcid = 0;
@@ -70,7 +73,7 @@ int main(int argc, char **argv)
 		struct canxl_frame xl;
 	} can;
 
-	while ((opt = getopt(argc, argv, "V:Ph?")) != -1) {
+	while ((opt = getopt(argc, argv, "V:l:Ph?")) != -1) {
 		switch (opt) {
 
 		case 'V':
@@ -81,6 +84,12 @@ int main(int argc, char **argv)
 				return 1;
 			}
 			vcid = 1;
+			break;
+
+		case 'l':
+			maxdlen =  strtoul(optarg, NULL, 0);
+			if ((maxdlen == 0) || (maxdlen > CANXL_MAX_DLEN))
+				maxdlen = CANXL_MAX_DLEN;
 			break;
 
 		case 'P':
@@ -268,7 +277,7 @@ int main(int argc, char **argv)
 					}
 				}
 			}
-			printxlframe(&can.xl);
+			printxlframe(&can.xl, maxdlen);
 			continue;
 		}
 
