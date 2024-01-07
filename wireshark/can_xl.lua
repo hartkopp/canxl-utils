@@ -23,7 +23,6 @@ can_xl_protocol.fields.acceptance_field = ProtoField.uint32("can_xl.acceptance_f
 can_xl_protocol.fields.data = ProtoField.bytes("can_xl.data", "Data")
 
 can_xl_protocol.fields.xlf_flag = ProtoField.uint8("can_xl.xlf_flag", "XLF Flag", base.DEC_HEX)
-can_xl_protocol.fields.vcid_flag = ProtoField.uint8("can_xl.vcid_flag", "VCID Flag", base.DEC_HEX)
 can_xl_protocol.fields.sec_flag = ProtoField.uint8("can_xl.sec_flag", "SEC Flag", base.DEC_HEX)
 
 local CAN_XL_PRIORITY_OFFSET = 0
@@ -35,7 +34,6 @@ local CAN_XL_ACCEPTANCE_FIELD_OFFSET = 8
 local CAN_XL_DATA_OFFSET = 12
 
 local CAN_XL_XLF_FLAG = 0x80
-local CAN_XL_VCID_FLAG = 0x02
 local CAN_XL_SEC_FLAG = 0x01
 
 function can_xl_protocol.dissector(buffer, packet_info, tree)
@@ -59,10 +57,6 @@ function can_xl_protocol.dissector(buffer, packet_info, tree)
     local xlf_flag = bit.band(flags, CAN_XL_XLF_FLAG)
     if xlf_flag > 0 then xlf_flag = 1 end
     flags_sub_tree:add(can_xl_protocol.fields.xlf_flag, flags_range, xlf_flag)
-
-    local vcid_flag = bit.band(flags, CAN_XL_VCID_FLAG)
-    if vcid_flag > 0 then vcid_flag = 1 end
-    flags_sub_tree:add(can_xl_protocol.fields.vcid_flag, flags_range, vcid_flag)
 
     local sec_flag = bit.band(flags, CAN_XL_SEC_FLAG)
     if sec_flag > 0 then sec_flag = 1 end
@@ -89,9 +83,6 @@ function can_xl_protocol.dissector(buffer, packet_info, tree)
 
     if xlf_flag > 0 then
         can_xl_sub_tree:append_text(", XLF")
-    end
-    if vcid_flag > 0 then
-        can_xl_sub_tree:append_text(", VCID")
     end
     if sec_flag > 0 then
         can_xl_sub_tree:append_text(", SEC")
