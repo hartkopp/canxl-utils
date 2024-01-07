@@ -52,7 +52,7 @@ int main(int argc, char **argv)
 	double gap = DEFAULT_GAP;
 	unsigned int from = DEFAULT_FROM;
 	unsigned int to = DEFAULT_TO;
-	canid_t prio = DEFAULT_PRIO_ID;
+	__u16 prio = DEFAULT_PRIO_ID;
 	int create_pattern = 0;
 	__u8 sec_bit = 0;
 	__u8 vcid = 0;
@@ -163,8 +163,7 @@ int main(int argc, char **argv)
 
 	if (vcid_pass) {
 		/* prepare the CAN XL frame with VCID content */
-		cfx.prio |= (vcid_pass << CANXL_VCID_OFFSET);
-		cfx.flags |= CANXL_VCID;
+		cfx.vcid = vcid_pass;
 
 		/* set sockopt flags for VCID pass through */
 		vcid_opts.flags |= CAN_RAW_XL_VCID_TX_PASS;

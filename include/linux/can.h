@@ -192,31 +192,38 @@ struct canfd_frame {
  */
 #define CANXL_XLF 0x80 /* mandatory CAN XL frame flag (must always be set!) */
 #define CANXL_SEC 0x01 /* Simple Extended Content (security/segmentation) */
-#define CANXL_VCID 0x02 /* prio contains the virtual CAN network identifier */
-
-/* the 8 bit VCID is optionally placed in the canxl_frame.prio element */
-#define CANXL_VCID_OFFSET 16 /* bit offset of VCID in prio element */
-#define CANXL_VCID_VAL_MASK 0xFFU /* VCID is a 8 bit value */
-#define CANXL_VCID_MASK (CANXL_VCID_VAL_MASK << CANXL_VCID_OFFSET)
 
 /**
  * struct canxl_frame - CAN with e'X'tended frame 'L'ength frame structure
- * @prio:  11 bit arbitration priority with zero'ed CAN_*_FLAG flags / VCID
- * @flags: additional flags for CAN XL
- * @sdt:   SDU (service data unit) type
- * @len:   frame payload length in byte (CANXL_MIN_DLEN .. CANXL_MAX_DLEN)
- * @af:    acceptance field
- * @data:  CAN XL frame payload (CANXL_MIN_DLEN .. CANXL_MAX_DLEN byte)
+ * @prio:   11 bit arbitration priority with zero'ed CAN_*_FLAG flags
+ * @vcid:   virtual CAN network identifier
+ * @__res0: reserved / padding must be set to 0
+ * @flags:  additional flags for CAN XL
+ * @sdt:    SDU (service data unit) type
+ * @len:    frame payload length in byte (CANXL_MIN_DLEN .. CANXL_MAX_DLEN)
+ * @af:     acceptance field
+ * @data:   CAN XL frame payload (CANXL_MIN_DLEN .. CANXL_MAX_DLEN byte)
  *
- * @prio shares the same position as @can_id from struct can[fd]_frame.
+ * @prio shares the lower 16 bits of @can_id from struct can[fd]_frame.
+ * @__res0 holds the @can_id flags CAN_xxx_FLAG and has to be set to zero
  */
 struct canxl_frame {
-	canid_t prio;  /* 11 bit priority for arbitration / 8 bit VCID */
-	__u8    flags; /* additional flags for CAN XL */
-	__u8    sdt;   /* SDU (service data unit) type */
-	__u16   len;   /* frame payload length in byte */
-	__u32   af;    /* acceptance field */
-	__u8    data[CANXL_MAX_DLEN];
+#if defined(__LITTLE_ENDIAN)
+	__u16 prio;   /* 11 bit priority for arbitration */
+	__u8  vcid;   /* virtual CAN network identifier */
+	__u8  __res0; /* reserved / padding must be set to 0 */
+#elif defined(__BIG_ENDIAN)
+	__u8  __res0; /* reserved / padding must be set to 0 */
+	__u8  vcid;   /* virtual CAN network identifier */
+	__u16 prio;   /* 11 bit priority for arbitration */
+#else
+#error "Unknown endianness"
+#endif
+	__u8  flags;  /* additional flags for CAN XL */
+	__u8  sdt;    /* SDU (service data unit) type */
+	__u16 len;    /* frame payload length in byte */
+	__u32 af;     /* acceptance field */
+	__u8  data[CANXL_MAX_DLEN];
 };
 
 #define CAN_MTU		(sizeof(struct can_frame))
