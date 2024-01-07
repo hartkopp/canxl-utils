@@ -46,6 +46,7 @@
 #ifndef _UAPI_CAN_H
 #define _UAPI_CAN_H
 
+#include <asm/byteorder.h>
 #include <linux/types.h>
 #include <linux/socket.h>
 #include <linux/stddef.h> /* for offsetof */
