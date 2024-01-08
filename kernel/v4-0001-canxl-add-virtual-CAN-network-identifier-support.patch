@@ -1,4 +1,4 @@
-From 3dc8b5b83c4085dd58a5e4d172fa160264112d7d Mon Sep 17 00:00:00 2001
+From 6f8dd07bccb1415f81e565af413e3454780bf5ef Mon Sep 17 00:00:00 2001
 From: Oliver Hartkopp <socketcan@hartkopp.net>
 Date: Sat, 30 Dec 2023 19:30:49 +0100
 Subject: [PATCH v4] canxl: add virtual CAN network identifier support
@@ -23,18 +23,18 @@ for CAN_RAW_XL_VCID_TX_PASS when both flags are set.
 With a rx_vcid_mask of zero all possible VCID values (0x00 - 0xFF) are
 passed to the user space when the CAN_RAW_XL_VCID_RX_FILTER flag is set.
 Without this flag only untagged CAN XL frames (VCID = 0x00) are delivered
-to the user space.
+to the user space (default).
 
 Signed-off-by: Oliver Hartkopp <socketcan@hartkopp.net>
 ---
- include/uapi/linux/can.h     | 40 +++++++++++++++-------
+ include/uapi/linux/can.h     | 41 ++++++++++++++--------
  include/uapi/linux/can/raw.h | 14 ++++++++
  net/can/af_can.c             |  2 ++
  net/can/raw.c                | 66 ++++++++++++++++++++++++++++++++++--
- 4 files changed, 106 insertions(+), 16 deletions(-)
+ 4 files changed, 106 insertions(+), 17 deletions(-)
 
 diff --git a/include/uapi/linux/can.h b/include/uapi/linux/can.h
-index 939db2388208..9f97e6a1e33f 100644
+index 939db2388208..8dcd8a9b5676 100644
 --- a/include/uapi/linux/can.h
 +++ b/include/uapi/linux/can.h
 @@ -44,10 +44,11 @@
@@ -49,7 +49,7 @@ index 939db2388208..9f97e6a1e33f 100644
  #include <linux/stddef.h> /* for offsetof */
  
  /* controller area network (CAN) kernel definitions */
-@@ -193,26 +194,39 @@ struct canfd_frame {
+@@ -193,26 +194,38 @@ struct canfd_frame {
  #define CANXL_XLF 0x80 /* mandatory CAN XL frame flag (must always be set!) */
  #define CANXL_SEC 0x01 /* Simple Extended Content (security/segmentation) */
  
@@ -61,18 +61,18 @@ index 939db2388208..9f97e6a1e33f 100644
 - * @len:   frame payload length in byte (CANXL_MIN_DLEN .. CANXL_MAX_DLEN)
 - * @af:    acceptance field
 - * @data:  CAN XL frame payload (CANXL_MIN_DLEN .. CANXL_MAX_DLEN byte)
-+ * @prio:   11 bit arbitration priority with zero'ed CAN_*_FLAG flags
-+ * @vcid:   virtual CAN network identifier
-+ * @__res0: reserved / padding must be set to 0
+- *
+- * @prio shares the same position as @can_id from struct can[fd]_frame.
++ * @prio:   11 bit arbitration priority (unused 5 bits must be set to zero)
++ *          Shares the lower 16 bits of @can_id from struct can[fd]_frame
++ * @vcid:   CAN XL virtual CAN network identifier
++ * @__res0: reserved / padding must be set to zero to maintain the CAN filter
++ *          functionality as is holds the @can_id flags CAN_xxx_FLAG
 + * @flags:  additional flags for CAN XL
 + * @sdt:    SDU (service data unit) type
 + * @len:    frame payload length in byte (CANXL_MIN_DLEN .. CANXL_MAX_DLEN)
 + * @af:     acceptance field
 + * @data:   CAN XL frame payload (CANXL_MIN_DLEN .. CANXL_MAX_DLEN byte)
-  *
-- * @prio shares the same position as @can_id from struct can[fd]_frame.
-+ * @prio shares the lower 16 bits of @can_id from struct can[fd]_frame.
-+ * @__res0 holds the @can_id flags CAN_xxx_FLAG and has to be set to zero
   */
  struct canxl_frame {
 -	canid_t prio;  /* 11 bit priority for arbitration (canid_t) */
@@ -84,9 +84,9 @@ index 939db2388208..9f97e6a1e33f 100644
 +#if defined(__LITTLE_ENDIAN)
 +	__u16 prio;   /* 11 bit priority for arbitration */
 +	__u8  vcid;   /* virtual CAN network identifier */
-+	__u8  __res0; /* reserved / padding must be set to 0 */
++	__u8  __res0; /* reserved / padding must be set to zero */
 +#elif defined(__BIG_ENDIAN)
-+	__u8  __res0; /* reserved / padding must be set to 0 */
++	__u8  __res0; /* reserved / padding must be set to zero */
 +	__u8  vcid;   /* virtual CAN network identifier */
 +	__u16 prio;   /* 11 bit priority for arbitration */
 +#else
@@ -103,7 +103,7 @@ index 939db2388208..9f97e6a1e33f 100644
  #define CANFD_MTU	(sizeof(struct canfd_frame))
  #define CANXL_MTU	(sizeof(struct canxl_frame))
 diff --git a/include/uapi/linux/can/raw.h b/include/uapi/linux/can/raw.h
-index 31622c9b7988..8890b0d2fd48 100644
+index 31622c9b7988..88e4e8176b89 100644
 --- a/include/uapi/linux/can/raw.h
 +++ b/include/uapi/linux/can/raw.h
 @@ -63,8 +63,22 @@ enum {
@@ -115,15 +115,15 @@ index 31622c9b7988..8890b0d2fd48 100644
 +	CAN_RAW_XL_VCID_OPTS,	/* CAN XL VCID configuration options */
  };
  
++/* configuration for CAN XL virtual CAN identifier (VCID) handling */
 +struct can_raw_vcid_options {
-+
 +	__u8 flags;		/* flags for vcid (filter) behaviour */
-+	__u8 tx_vcid;		/* VCID value set into canxl_frame.prio */
++	__u8 tx_vcid;		/* VCID value set into canxl_frame.vcid */
 +	__u8 rx_vcid;		/* VCID value for VCID filter */
 +	__u8 rx_vcid_mask;	/* VCID mask for VCID filter */
-+
 +};
 +
++/* can_raw_vcid_options.flags for CAN XL virtual CAN identifier handling */
 +#define CAN_RAW_XL_VCID_TX_SET		0x01
 +#define CAN_RAW_XL_VCID_TX_PASS		0x02
 +#define CAN_RAW_XL_VCID_RX_FILTER	0x04
@@ -275,5 +275,5 @@ index e6b822624ba2..3083df64723c 100644
  
  static int raw_sendmsg(struct socket *sock, struct msghdr *msg, size_t size)
 -- 
-2.34.1
+2.39.2
 
