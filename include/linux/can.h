@@ -192,11 +192,10 @@ struct canfd_frame {
  */
 #define CANXL_XLF 0x80 /* mandatory CAN XL frame flag (must always be set!) */
 #define CANXL_SEC 0x01 /* Simple Extended Content (security/segmentation) */
-#define CANXL_VCID 0x02 /* prio contains the virtual CAN network identifier */
 
-/* the 8 bit VCID is optionally placed in the canxl_frame.prio element */
+/* the 8-bit VCID is optionally placed in the canxl_frame.prio element */
 #define CANXL_VCID_OFFSET 16 /* bit offset of VCID in prio element */
-#define CANXL_VCID_VAL_MASK 0xFFU /* VCID is a 8 bit value */
+#define CANXL_VCID_VAL_MASK 0xFFUL /* VCID is an 8-bit value */
 #define CANXL_VCID_MASK (CANXL_VCID_VAL_MASK << CANXL_VCID_OFFSET)
 
 /**
