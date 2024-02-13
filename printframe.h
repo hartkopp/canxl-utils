@@ -6,13 +6,11 @@
 static inline void printxlframe(struct canxl_frame *cfx, unsigned int maxdlen)
 {
 	int i;
+	canid_t vcid = (cfx->prio & CANXL_VCID_MASK) >> CANXL_VCID_OFFSET;
+	canid_t prio = (cfx->prio & CANXL_PRIO_MASK);
 
 	/* print prio and CAN XL header content */
-	if ((cfx->flags & CANXL_VCID) && (cfx->prio & CANXL_VCID_MASK))
-		printf("%06X", cfx->prio & (CANXL_VCID_MASK | CANXL_PRIO_MASK));
-	else
-		printf("%03X", cfx->prio & CANXL_PRIO_MASK);
-
+	printf("%02X%03X", vcid, prio);
 	printf("###%02X.%02X.%08X", cfx->flags, cfx->sdt, cfx->af);
 
 	/* print up to maxdlen data bytes */

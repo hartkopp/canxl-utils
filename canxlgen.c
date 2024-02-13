@@ -164,7 +164,6 @@ int main(int argc, char **argv)
 	if (vcid_pass) {
 		/* prepare the CAN XL frame with VCID content */
 		cfx.prio |= (vcid_pass << CANXL_VCID_OFFSET);
-		cfx.flags |= CANXL_VCID;
 
 		/* set sockopt flags for VCID pass through */
 		vcid_opts.flags |= CAN_RAW_XL_VCID_TX_PASS;
