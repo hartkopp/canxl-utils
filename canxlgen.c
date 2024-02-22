@@ -159,7 +159,7 @@ int main(int argc, char **argv)
 	cfx.prio = prio;
 	cfx.flags = (CANXL_XLF | sec_bit);
 	cfx.sdt = 0;
-	cfx.af = 0xAFAFAFAF;
+	cfx.af = 0x11223344;
 
 	if (vcid_pass) {
 		/* prepare the CAN XL frame with VCID content */
