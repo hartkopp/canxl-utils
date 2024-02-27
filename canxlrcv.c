@@ -67,11 +67,7 @@ int main(int argc, char **argv)
 	can_err_mask_t err_mask;
 	struct can_filter *rfilter;
 	struct timeval tv;
-	union {
-		struct can_frame cc;
-		struct canfd_frame fd;
-		struct canxl_frame xl;
-	} can;
+	static cu_t cu;
 
 	while ((opt = getopt(argc, argv, "V:l:Ph?")) != -1) {
 		switch (opt) {
@@ -232,7 +228,7 @@ int main(int argc, char **argv)
 	while (1) {
 		socklen_t len = sizeof(addr);
 
-		nbytes = recvfrom(s, &can.xl, sizeof(struct canxl_frame),
+		nbytes = recvfrom(s, &cu, sizeof(cu),
 				  0, (struct sockaddr*)&addr, &len);
 		if (nbytes < 0) {
 			perror("read");
@@ -261,33 +257,33 @@ int main(int argc, char **argv)
 			return 1;
 		}
 
-		if (can.xl.flags & CANXL_XLF) {
-			if (nbytes != CANXL_HDR_SIZE + can.xl.len) {
+		if (cu.xl.flags & CANXL_XLF) {
+			if (nbytes != CANXL_HDR_SIZE + cu.xl.len) {
 				printf("nbytes = %d\n", nbytes);
 				fprintf(stderr, "read: no CAN XL frame\n");
 				return 1;
 			}
 
 			if (check_pattern) {
-				for (i = 0; i < can.xl.len; i++) {
-					if (can.xl.data[i] != ((can.xl.len + i) & 0xFFU)) {
+				for (i = 0; i < cu.xl.len; i++) {
+					if (cu.xl.data[i] != ((cu.xl.len + i) & 0xFFU)) {
 						fprintf(stderr, "check pattern failed %02X %04X\n",
-							can.xl.data[i], can.xl.len + i);
+							cu.xl.data[i], cu.xl.len + i);
 						return 1;
 					}
 				}
 			}
-			printxlframe(&can.xl, maxdlen);
+			printxlframe(&cu.xl, maxdlen);
 			continue;
 		}
 
 		if (nbytes == CANFD_MTU) {
-			printfdframe(&can.fd);
+			printfdframe(&cu.fd);
 			continue;
 		}
 
 		if (nbytes == CAN_MTU) {
-			printccframe(&can.cc);
+			printccframe(&cu.cc);
 			continue;
 		}
 

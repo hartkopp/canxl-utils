@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 	struct sockaddr_can addr;
 	struct can_raw_vcid_options vcid_opts = {};
 	struct timespec ts;
-	struct canxl_frame cfx = {0};
+	static struct canxl_frame cfx;
 	int nbytes, ret, dlen, i;
 	int sockopt = 1;
 

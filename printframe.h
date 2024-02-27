@@ -3,6 +3,12 @@
 #include <string.h>
 #include <linux/can.h>
 
+typedef union {
+	struct can_frame cc;
+	struct canfd_frame fd;
+	struct canxl_frame xl;
+} cu_t;
+
 static inline void printxlframe(struct canxl_frame *cfx, unsigned int maxdlen)
 {
 	int i;
