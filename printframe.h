@@ -17,11 +17,11 @@ static inline void printxlframe(struct canxl_frame *cfx, unsigned int maxdlen)
 
 	/* print prio and CAN XL header content */
 	printf("%02X%03X", vcid, prio);
-	printf("###%02X.%02X.%08X", cfx->flags, cfx->sdt, cfx->af);
+	printf("#%02X:%02X:%08X#", cfx->flags, cfx->sdt, cfx->af);
 
 	/* print up to maxdlen data bytes */
 	for (i = 0; i < cfx->len && i < maxdlen; i++) {
-		if (!(i%4))
+		if (!(i%4) && (i))
 			printf(".");
 		printf("%02X", cfx->data[i]);
 	}
